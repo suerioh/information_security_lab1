@@ -1,0 +1,221 @@
+\documentclass{report}
+\usepackage{cite}
+\usepackage{titlesec}
+\usepackage{amsmath}
+\usepackage[english]{babel}
+\usepackage{caption}
+\usepackage{multirow}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usetikzlibrary{calc}
+\usetikzlibrary{arrows}
+\usepackage{pgfplots}
+\captionsetup[figure]{font=small}	
+\captionsetup[table]{font=footnotesize}
+\newcommand{\R}{\mathbb{R}}
+\usepackage{float}
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\hbadness=10000
+\usepackage{array}
+
+\begin{document}
+
+
+\begin{titlepage}
+\begin{center}
+\vspace*{0.8cm}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.4\textwidth]{logo_uni}
+\end{figure}
+\LARGE{\textsc{University of Padua}}\\
+\vspace*{0.1cm}
+\Large{\textsc{Department of Information Engineering}}\\
+\vspace*{1.8cm}
+\Large{\textsc{Information Security Report}}\\
+\vspace*{0.1cm}
+\Large{\textsc{Laboratory Session 1}}\\
+\vspace*{0.8cm}
+\huge{\textbf{Implementation and linear cryptanalysis of a Feistel cipher}}\\
+\vspace*{1cm}
+\end{center}
+\large{\textit{Author:}}
+\hfill
+\large{\textit{Teacher:}} \\
+\large{Luca \textsc{Badin}}
+\hfill
+\large{Nicola \textsc{Laurenti}}\\
+\large{Arturo \textsc{Bellin}}\\
+\large{Nikhil Karakuchi\textsc{ Chidananda}}\\
+\large{Simone \textsc{Favaro}}\\
+\large{Filippo \textsc{Giambartolomei}}\\
+\large{Fawad \textsc{Ul Haq}}\\
+
+\vspace*{0cm}
+\begin{center}
+\large{8th November 2020}\\
+\end{center}
+\end{titlepage}
+\pagebreak
+
+
+\setcounter{page}{1}
+\pagenumbering{arabic}
+\chapter*{Solution}
+Our solution to laboratory 1 is entirely implemented using Python. Specifically, we made use of the {\tt NumPy} library to easily manipulate vectors and quickly compute operations between them. The solution is composed of three Python source files: {\tt main.py} contains the encryptor implementations and attack results, {\tt attack.py} contains functions necessary to carry out the attacks, and {\tt hexutils.py} contains two functions for the string to binary {{\tt NumPy}} vector conversion and vice versa.
+		
+\section*{Task 1}
+We implemented all of the Feistel encryptors using the same function {\tt encrypt()}, which takes different input parameters and functions based on the cipher type (\textit{linear}, \textit{nearly linear} and \textit{non linear}): the plaintext {\tt u}, the initial key {\tt k}, the number of rounds {\tt r}, the message length {\tt l} and the round function {\tt f}.\\ In fact, even if those may differ for each implementation, the way in which the three transformations are computed is always the same: \textit{substitution}, then \textit{linear tf} and finally \textit{transposition}.\\
+With regards to the subkey generation and the round functions, {\tt key\_gen} takes as input the initial key {\tt k} and the specific round {\tt i} in order to output the subkey for that round, while there are three different round functions, one for each Feistel encryptor.
+
+To implement the linear Feistel encryptor required by Task 1, we simply used the {\tt encrypt} function with the linear round function {\tt lin\_f}, which uses the round subkey {\tt k}, the round ordinality {\tt i} and the input {\tt y} to compute the so-called value {\tt w}.   
+
+\section*{Task 2}
+Since in Feistel ciphers the encryptor and decryptor are identical, but for the order in which the subkeys are used inside the round functions, we made a {\tt decrypt} function which works with the same parameters used in {\tt encrypt}, except for swapping plaintext {\tt u} with ciphertext {\tt x}, where the order of the subkeys order used for the round function computations is reversed. In this way we preserved the {\tt f\_lin} function, avoiding the rewrite of a nearly identical piece of code.
+
+\section*{Task 3}
+In order to find the two matrices $A$ and $B$ which identify the linear relationship for the linear Feistel cipher, we created the {\tt find\_mat} function, which uses the encryption function {\tt encrypt}, the round function {\tt f} and the message length {\tt l}. The way it works is just an implementation of the methodology presented in \textit{Appendix 1} of the lab instructions, using {\tt numpy} arrays.
+
+\section*{Task 4}
+The linear cryptanalysis KPA against the linear Feistel cipher is done using the {\tt find\_key\_kpa} function, which takes as input the two matrices we found in Task 3 {\tt a}, {\tt b} and the plaintext-ciphertext pair {\tt u}, {\tt x}. The function uses {\tt numpy} arrays and {\tt numpy} operations in order to quickly compute $k = A^{-1}(x + Bu)$. Moreover, the computation of the inverse matrix $A^{-1}$ follows the methodology presented in \textit{Appendix 2} of the lab instructions.
+
+To carry out the cryptanalysis on the five {\tt (u, x)} pairs provided to us in the file {\tt KPApairsVancouver\_linear.hex}, we firstly used the {\tt find\_mat} function to find the $A$ and $B$ matrices (which must be the same for all five pairs, since the encryption method is the same). They are:
+
+$$
+A = 
+\scriptsize
+\left[
+\setlength\extrarowheight{-50pt}
+\arraycolsep=1pt
+\begin{array}{*{32}c}
+ 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0\\
+  1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0\\
+  1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0\\
+  1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1\\
+  0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1\\
+  0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0\\
+  0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1\\
+  0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1\\
+  0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1\\
+  0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1\\
+  1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0\\
+  0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0\\
+  1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 1 & 0 & 1 & 0\\
+  1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0\\
+  0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0\\
+  0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1\\
+  1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0\\
+  1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0\\
+  1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0\\
+  0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1\\
+  0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0\\
+  1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0\\
+  1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1\\
+  0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1\\
+  0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0\\
+  0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1\\
+  1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0\\
+  1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+\end{array}
+\right]
+$$
+$$
+B = 
+\scriptsize
+\left[
+\setlength\extrarowheight{-20pt}
+\arraycolsep=1pt
+\begin{array}{*{32}c}
+1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0\\
+  0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1\\
+\end{array}
+\right]
+$$
+Then, using {\tt find\_key\_kpa} function for each pair, we checked the correctness of the guessed key, by observing that it is always the same and it maps each plaintext to the corresponding ciphertext. That is, $\hat{k} = k = ${\tt 55D9F224}.
+
+\section*{Task 5}
+With regards to the nearly linear Feistel cipher, we simply used the {\tt encrypt} function with a different round function implementation, called {\tt near\_lin\_f}. A similar process was followed by {\tt decrypt}.
+
+\section*{Task 6}
+For task 6 we did not manage to find the exact matrices and the correct encryption key, but we created an algorithm that, with enough plaintext/ciphertext pairs, can find them in a much faster way than a brute force attack on the entire key space.\\
+We first noticed that the nearly-linear function was in the form {\tt f} $\wedge $ {\tt  x}, where f is the same function used in the linear implementation of the cipher and x is a chain of four $\lor$ operations.  {\tt  x} assumes value 0 only when all terms of the chain are equal to 0, 1 otherwise. Furthermore the value of {\tt  x} is important only when {\tt f} is equal to 1 due to the nature of the and operation.\\
+All considered it is possible to approximate the value of {\tt  x} with 1 committing an error only in the specific case where {\tt f} is equal to 1 and all terms of {\tt  x} are equal to 0. With this approximation the cipher becomes linear and it is possible to use the same algorithm used in task 3 to find the matrices A and B, assuming C the identity matrix:
+$$
+A = 
+\scriptsize
+\left[
+\setlength\extrarowheight{-50pt}
+\arraycolsep=1pt
+\begin{array}{*{32}c}
+
+\end{array}
+\right]
+$$
+$$
+B = 
+\scriptsize
+\left[
+\setlength\extrarowheight{-20pt}
+\arraycolsep=1pt
+\begin{array}{*{32}c}
+
+\end{array}
+\right]
+$$
+Using the same function used in task 4 it is possible to compute a guess for the value of the key used to encrypt each plaintext/ciphertext pair and then test it on all pairs to check if it is the correct one. Unfortunately given the 5 text pairs given we weren't able to find the correct key but the results are encouraging since the hamming distance between the real ciphertext and the ciphertext computed using the guessed key is as low as 3 bits. 
+
+
+\section*{Task 7}
+Similarly to Task 5, the non linear Feistel cipher implementation required just a different round function called {\tt non\_lin\_f}. Both the {\tt encrypt} and {\tt decrypt} function remained unchanged.
+
+\section*{Task 8}
+The Meet in the middle attack against the concatenation of two non-linear Feistel ciphers was implemented using an approach based on \textit{Appendix 3} of the lab instructions.\\
+The {\tt meet\_in\_the\_middle} function takes as input parameters the cardinalities of random guesses {\tt n1}, {\tt n2} for $\hat{k'}$ and $\hat{k''}$, encryption and decryption functions {\tt enc}, {\tt dec}, the plaintext-ciphertext pair {\tt u}, {\tt x}, the round function {\tt f} and the length of the message {\tt l}.\\
+After generating the $k'$ and $k''$ random guesses using the {\tt numpy} \textit{random.randomint} function (which creates random binary arrays of length {\tt l}), for each guess $\hat{k'}_i$ we stored inside a list the pairs $(\hat{k'}_i, \hat{x'}_i=E'_{\hat{k'}_i}(u))$. Same thing is done for pairs $(\hat{k''}_i, \hat{u''}_i=D''_{\hat{k''}_i}(x))$. Then we used the {\tt numpy} function \textit{intersect1d} to retrieve all possible matches between the $\hat{x'}_i$ and $\hat{u''}_j$, so that the corresponding keys pairs $\hat{k'}_i$ and $\hat{k''}_j$ are stored in a list and returned by the function.
+
+To get the key pair guess regarding the KPA attack on the five plaintext-ciphertext pairs in the {\tt KPApairsVancouver\_non\_linear.hex} document, we initially ran the function for only the first {\tt (u, x)} pair, using very high {\tt n1} and {\tt n2} parameters, finding some matches. Since at the end of the day we just needed the single most probable guess, we trimmed all the matches, checking if a certain matching key pair also worked for some of the other four {\tt (u, x)} pairs provided in the document: this was done by checking if  $x = E'_{\hat{k'_i}}(E''_{\hat{k''_j}}(u))$.\\
+Clearly, if a key pair worked for each of the five {\tt (u, x)} pairs, it is most likely the correct guess (even though it is still not certain), so when we found a $(\hat{k'}_i, \hat{k''}_j)$ that satisfied that last requirement we assumed that $\hat{k'}_i = k'_i$ and $\hat{k''}_j = k''_j$. In particular, our guess is $\hat{k'}_i = k'_i$ = {\tt 030C} and $\hat{k''}_j = k''_j$ = {\tt 564D}.\\
+
+Since the generation of the key pair is random, it is possible that at the end of the execution the correct one is not found, both when {\tt n1}, {\tt n2} is much lower than the cardinality of the keyspace, and when they are close to it (since we do not generate unique values).\\
+To overcome this issue, we created the {\tt meet\_in\_the\_middle\_sequential} function that tests key pairs in sequential order. This function is particularly helpful to test the algorithm and to secure a valid key pair result just running the program once. 
+
+
+\end{document}
+
